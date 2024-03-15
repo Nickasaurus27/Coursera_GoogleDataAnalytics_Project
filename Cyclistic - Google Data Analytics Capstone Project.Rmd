@@ -1,0 +1,481 @@
+---
+title: "Cyclistic Bike-Share - Capstone Project"
+author: "Nick Assuras"
+output: 
+  html_document:
+      toc: true
+      toc_float: true
+---
+
+# Introduction
+
+This capstone project was the final step in the **[Google Data Analytics Certificate from Coursera](https://www.coursera.org/professional-certificates/google-data-analytics)**. The main objective of this project was for me to showcase the skills acquired during the course and apply them to a practical situation. In this project, I assumed the role of a junior data analyst working for a fictional bike-share company, Cyclistic.
+
+##### Cyclistic 
+
+In 2016, Cyclistic launched a successful bike-share offering. Since then, the program has grown to a fleet of 5,824 bicycles that are geo-tracked and locked into a network of 692 stations across Chicago. The bikes can be unlocked from one station and returned to any other station in the system anytime. 
+
+##### Scenario
+
+With past marketing efforts, Cyclistic had focused mainly on brand awareness. The **director of marketing, Lily Moreno**, believes that Cyclistic's future success depends on increasing the number of annual memberships, who are considered to be more profitable than casual riders. Casual riders can purchase a day pass or a single-ride pass.
+
+Moreno believes that targeting casual riders are the key because they are already aware of the Cyclistic annual program and have already chosen to write with Cyclistic. Because of this, Moreno wants to focus on **converting casual riders to annual members** for future marketing campaigns. 
+
+Moreno and the Cyclistic team are asking me, the data analyst, to review past trip data to inform their decisions. 
+
+This leads us to the main question we need to answer for this project: 
+
+### Business Task: How do annual members and casual riders use Cyclistic bikes differently?
+
+# Project
+
+This project will work towards some answers/recommendations to our business task.
+
+The project itself has 5 different phases: **Preparation**, **Process**, **Analyze**, **Share**, and **Act**. 
+
+**Preparation** is about the raw data itself: where is it coming from? How are we preparing it for this project? 
+
+The **Process** phase will provide details on what tools I used for this project as well as share the steps I took to get the data ready for the Analysis phase. 
+
+**Analyze** is when I began examining the data, uncovering some initial insights and deciding on how I want to set up my data for visualization. 
+
+In the **Share** phase, I took our data and, using R, produced some key visualizations that aided in providing my recommendations to the Cyclistic team. 
+
+**Act**, the final phase, is the conclusion of the project. Here is where my recommendations on how Cyclistic should best target casual riders as well as noting some potential next steps for future marketing campaigns. 
+
+Now,that we've established the background on Cyclistic and  the business task, we will move through each of these project phases in order to reach a conclusion on how to best inform the Cyclistic team. 
+
+**Let's get started!**
+
+## Preparation
+
+#### Data Details
+
+The data used for this project can be found **[here](https://divvy-tripdata.s3.amazonaws.com/index.html)**. The data is stored in zipped CSV files by year and month. It has been made publicly available by Motivate International Inc under this **[license](https://ride.divvybikes.com/data-license-agreement)**. For this project, I have downloaded ride data from Jan 2021 to Dec 2021 (12 CSV files in total). 
+
+After downloading the files, I unzipped each one and placed them into a *Raw Data* folder on my desktop. I inspected each CSV file with Excel and noticed that all of the files shared consistent headers and structure;  combining the data with the proper tool would make the **Process** phase a fair bit easier. The 12 months of data added together came to well over 5 million rows of data. 
+
+Below is a screenshot of the headers from one of the CSV files: 
+![Ride trip data - CSV headers](/Users/nickassuras/Desktop/Google Capstone Project/Case Study #1 - Biking/GitHub Test/Untitled/Cyclistic-ridetrip-csvheaders.png)
+
+**A quick description of each column: **
+
+>
+* *ride_id*: a unique value assigned for each trip
+* *rideable_type*: the type of bike chosen; can be 'electric', 'classical', or 'docked'
+* *started_at*: datetime of when a rider began their bike ride
+* *ended_at*: datetime of when a rider finished their bike ride
+* *start_station_name*: name of station that a rider begins their ride
+* *start_station_id*: id of station that a rider begins their ride
+* *end_station_name*: name of station that a rider finishes their ride 
+* *end_station_id*: id of station that a rider finishes their ride
+* *start_lat*: starting latitude coordinate for a bike ride
+* *start_lng*: starting longitude coordinate for a bike ride
+* *end_lat*: ending latitude coordinate for a bike ride
+* *end_lng*: ending longitude coordinate for a bike ride
+* *member_casual*: the rider's membership type; either 'casual' (day-trip, single-day passes) or 'annual' (Cyclistic members) 
+* *day_of_week*: **I added this in each of the CSV files. Marks each day of the week numerically where Sunday = 1 and Saturday = 7**
+
+On my first look at the data, I noticed a couple of things: 
+
+1) There were a lot **null values** for the **start station** and **end station** columns
+
+2) There were a fair amount of rows where the **started_at** time and the **ended_at** time were the same. Meaning that these wouldn't actually be considered 'trips'  
+
+How I dealt with these issues would be addressed later in the project. 
+
+Now that we have an understanding of the data itself and how it's been prepared, it's time to move to the **Process** phase.  
+
+## Process
+
+### Getting started 
+
+As I noted in the **Preparation** phase, all 12 CSV files added up to more than 5 million rows. Excel is not capable of efficiently working with this much data, so I would need to choose another tool to work with on this project. 
+
+Initially, my intention was to use PostgreSQL to combine the data and query what I would need. I even got started with a .sql file containing multiple different queries found **[here](https://github.com/Nickasaurus27/GoogleCapstoneProject/blob/799254cdc470d77f7683d621cf5cdd57228b4a91/BikingSQLQueries.sql)**. 
+
+**I ultimately chose to use R** because I had the least experience with it and I wanted to improve my programming skills. R was also the perfect tool because it can easily handle larger sets of data while offering tools for data visualization.
+
+### Importing libraries
+
+After deciding on using R, I went ahead and installed all of the necessary libraries: 
+```{r, load-packages, message = FALSE}
+library(tidyverse) #helpful for wrangling data
+library(lubridate) #for working with dates
+library(scales) #for axis labels
+library(geosphere) #to be used for calculating ride distance
+```
+
+**tidyverse** and **lubridate** are fairly common libraries in R, especially with large amounts of data. It wasn't until later on in my analysis that I realized I would also need to use both the **scales** and **geosphere** packages. I will make a note of when and why these libraries were used later in the project.
+
+### Importing data
+
+After loading my libraries, the next step was to load each of the ride CSV files to the environment. I applied the **read.csv()** function to read in the data and assigned each monthly CSV file to its own variable: 
+```{r, eval = TRUE, echo = TRUE, message = FALSE}
+
+# Setting my working directory
+setwd('/Users/nickassuras/Desktop/Google Capstone Project/Case Study #1 - Biking')
+getwd()
+
+jan_rides <- read.csv('Raw Data/Jan2021_divvy_tripdata.csv')
+feb_rides <- read.csv('Raw Data/Feb2021_divvy_tripdata.csv')
+mar_rides <- read.csv('Raw Data/Mar2021_divvy_tripdata.csv')
+apr_rides <- read.csv('Raw Data/Apr2021_divvy_tripdata.csv')
+may_rides <- read.csv('Raw Data/May2021_divvy_tripdata.csv')
+jun_rides <- read.csv('Raw Data/June2021_divvy_tripdata.csv')
+jul_rides <- read.csv('Raw Data/July2021_divvy_tripdata.csv')
+aug_rides <- read.csv('Raw Data/Aug2021_divvy_tripdata.csv')
+sep_rides <- read.csv('Raw Data/Sept2021_divvy_tripdata.csv')
+oct_rides <- read.csv('Raw Data/Oct2021_divvy_tripdata.csv')
+nov_rides <- read.csv('Raw Data/Nov2021_divvy_tripdata.csv')
+dec_rides <- read.csv('Raw Data/Dec2021_divvy_tripdata.csv')
+```
+
+### Merging the data
+
+Once the files were uploaded, I combined them together to create one dataframe to work with called **combined_df**. I established in the **Preparation** phase that every file shared the same headers, so combining the files was no trouble at all. 
+
+To keep my environment nice and organized, I also went ahead and removed the original files using the **rm()** function since we no longer need them. 
+
+```{r, eval = TRUE, echo = TRUE}
+combined_df <- rbind(jan_rides, feb_rides, mar_rides, apr_rides, may_rides, jun_rides,
+      jul_rides, aug_rides, sep_rides, oct_rides, nov_rides, dec_rides)
+
+rm(jan_rides, feb_rides, mar_rides, apr_rides, may_rides, jun_rides,
+   jul_rides, aug_rides, sep_rides, oct_rides, nov_rides, dec_rides)
+```
+
+After combining the data, I ran the **summary()** function to check out each column and make sure that their data types were correct. This had to be ironed out before I could analyze and eventually visualize the data. 
+```{r, eval = TRUE, echo = TRUE}
+summary(combined_df)
+```
+
+What I first noticed was that the **day_of_week** column I created in each CSV file was being recognized by R as a numeric and not a factor. I want to use this column as a category, I don't want these day of week numbers to be used for any calculations. This is something I would change in the next step while I was transforming the data. 
+
+### Transforming the data
+
+Since we'll be making use of the **started_at** and **ended_at** columns, I wanted to be sure that R was recognizing these as datetime data types (this is more of a precautionary measure). I decided to also reassign *combined_df* to a new object, **all_rides**. 
+```{r}
+all_rides <- combined_df %>%
+  mutate(started_at = as_datetime(started_at)) %>%
+  mutate(ended_at = as_datetime(ended_at))
+```
+
+### Adding new columns 
+
+In this dataframe update, I fixed the **day_of_week** issue I noticed before, and I added some new columns: **ride_length_mins**, **ride_distance_m**, **ride_month**, **day_of_month**, and **hour_of_day**. 
+
+```{r}
+all_rides <- all_rides %>% 
+  mutate(ride_length_mins = as.numeric((ended_at - started_at) / 60)) %>%
+  mutate(ride_distance_m = distHaversine(cbind(start_lng, start_lat), 
+                                      cbind(end_lng, end_lat))) %>%
+  mutate(ride_month = month(started_at, label = TRUE)) %>%
+  mutate(day_of_month = day(started_at)) %>%
+  mutate(day_of_week = factor(wday(started_at))) %>%
+  mutate(hour_of_day = hour(started_at))
+```
+
+**New columns: **
+
+> 
+* *ride_length_mins*: returns minutes as an integer
+* *ride_distance_m*: used the starting and ending lat/lng columns to calculate this 
+* *ride_month*: returns month in abbreviated form ('Jan','Feb',etc.) 
+* *day_of_month*: returns the day number in each calendar month as an integer
+* *hour_of_day*: returns the hour of each day as an integer; starting from 0, ending at 23
+
+To calculate **ride_length_mins**, I subtracted the *ended_at* from the *started_at* columns and divided by 60. When I first tried calculating ride length, it was being returned in seconds, not minutes. I couldn't figure out how to fix it so I decided to store the column as a numeric value and simply use a division; *Side note: I would like to find a solution to this in the future.*
+
+For **ride_month**, I extracted the month from the *started_at* column and set the label parameter to *TRUE*. This way, it would return the abbreviated month name ('Jan','Feb',etc.). 
+
+It was in this section of the project that I made use of the **geosphere** package. I had to do some research online on how to calculate distance with starting and ending latitude/longitude points. I came across the **distHaversine** function from geosphere, and this is what I'm using to calculate ride distance in the code chunk above. 
+
+### Cleaning the data
+
+When the files were read into the environment, all of the missing values came in as just blank ('') as opposed to 'NA'. Despite several attempts I was having trouble trying to work with the empty values, so I converted the missing blank values in the 'station' columns to contain 'NA': 
+```{r}
+all_rides$start_station_id[all_rides$start_station_id == ''] <- NA
+all_rides$end_station_id[all_rides$end_station_id == ''] <- NA
+all_rides$start_station_name[all_rides$start_station_name == ''] <- NA
+all_rides$end_station_name[all_rides$end_station_name == ''] <- NA
+```
+
+Here, I was getting a count of how many null values for our 'station' columns. I would only need to check either the 'id' or 'name' columns of both start and end stations to get the number. Here I just evaluated the null values in the 'name' columns: 
+```{r}
+sum(is.na(all_rides$start_station_name)) / length(all_rides$start_station_name) 
+sum(is.na(all_rides$end_station_name)) / length(all_rides$end_station_name)
+```
+According to the calculation above, **between 12% and 13.2% of the station rows contain 'NA' values**. Interesting to note that the amount of missing data in both columns isn't the same. 
+
+After converting the blank valeus to 'NA', I created a new, filtered dataframe -- **all_rides_clean**. I first filtered out any 'start' and 'end' station id columns that contained 'NA' values. Then, I added filters to remove any rides that lasted longer than 0 minutes and also traveled more than 0 meters. 
+```{r}
+all_rides_clean <- all_rides %>%
+  filter(!is.na(start_station_id)) %>%
+  filter(!is.na(end_station_id)) %>%
+  filter(ride_distance_m > 0) %>%
+  filter(ride_length_mins > 0) %>%
+  arrange(started_at)
+```
+
+The total number of rows dropped by about 13% after filtering the original dataframe. Though I would've preferred not to lose this data, I feel that it would've made interpreting the results more difficult than it needed to be.
+
+Even with 13% of the rows gone, I still had over 4 million rows of data, which is more than enough to draw from for this project and to address our business task.
+
+Having a new, clean dataframe in hand, my next step was to start to dig into the data. Onto the **Analyze** phase! 
+
+## Analyze
+
+I started this phase by obtaining some high-level metrics out of the data:
+
+> 
+* *Total number of rides*: **`r count(all_rides_clean)`**
+* *Average ride length (mins)*: **`r round(mean(all_rides_clean$ride_length_mins),2)`**
+* *Average ride distance (metres)*: **`r round(mean(all_rides_clean$ride_distance_m),2)`**
+
+Before moving to the **Share** phase, there were a couple of quick breakdowns that I wanted to see in regards to the riders. 
+
+I first wanted to check out the **count of bike types used per member type**: 
+```{r, echo = FALSE}
+table(all_rides_clean$member_casual, all_rides_clean$rideable_type)
+```
+
+**Observations**:
+
+* The **classic bike is the preferred bike** by both annual and casual riders
+  + Followed by the electric bike
+* Interestingly, docked bikes are almost exclusively used by casual riders and only one annual member rider.
+* Given that casual riders make up both one-day and/or single-trip riders, perhaps they are indifferent to riding a docked bike and returning it to its original station 
+  + While the annual members have a membership for a purpose, where they need to pick up any bike without friction to accommodate their schedule. 
+
+I was also curious to get a quick snapshot of **how long and far each member type rode for** in 2021: 
+```{r, message = FALSE, echo = FALSE}
+all_rides_clean %>%
+  group_by(member_casual) %>%
+  summarize(mean(ride_length_mins), round(mean(ride_distance_m)))
+```
+
+**Observations**:
+
+* We can see that **casual riders' average trip length is more than two times longer than annual member rides**
+  + Because of the longer ride times, they inherently ride further distances 
+* This may back up the note above that annual members ride with a purpose and hence, need a membership while casual riders are free to ride as long as they want (a good deal longer than members anyway). 
+
+Finally, I wanted a high-level peek at total rides by month. I expect to see that rides drop considerably around the wintertime.
+```{r, echo = FALSE}
+table(all_rides_clean$ride_month)
+```
+
+**Observations**:
+
+* As I thought, the number of rides are considerably lower in the fall and wintertime, but ramp up around the spring. 
+  + We see **total rides peak in July** (647K)
+
+While there was a considerable amount more to explore, I felt that creating too many large, convoluted tables would only distract and not help find patterns and trends in the data. So, now that I'd ventured into the data a bit, I wanted to create some visualizations. This leads us to the **Share** phase. 
+
+## Share
+
+We've explored some of the data in the **Analyze** phase on how casual and annual members differ from each other. Now, I want to take that even further by asking some more questions about our data and creating visualizations.
+
+In particular, I wanted to better understand how each member type differs in relation to different date periods. For instance, how do casual and annual members differ in rides by month? By Day of week? By hour? 
+
+I also wanted to uncover any differences in ride distance between member types by the type of bike ridden. For instance, do casual members ride further distances than annual members on electric bikes in the summer? Do they ride less distance on classic bikes in the winter?  
+
+First, I'll explore how member types differ in number of rides according to time. 
+
+### Time Periods Visualizations
+
+<br>
+
+#### **Number of Rides by Month**
+```{r, message = FALSE, echo = FALSE}
+all_rides_clean %>%
+  group_by(ride_month, member_casual) %>%
+  summarize(number_of_rides = n(), avg_ride_duration = mean(ride_length_mins),
+            avg_ride_distance_m = mean(ride_distance_m)) %>%
+  ggplot(aes(x = ride_month, y = number_of_rides, 
+             group = member_casual, fill = member_casual)) + 
+  geom_bar(position = 'dodge', stat = 'identity', width = 0.75) + 
+  scale_y_continuous(labels = comma, expand = c(0,0)) + 
+  theme_light() +
+  labs(title = 'Cyclistic - Total Rides: Jan 2021 - Dec 2021',
+       subtitle = 'By Month and Member Type') +
+  theme(plot.title = element_text(face = 'bold'),
+        plot.subtitle = element_text(face = 'italic')) + 
+  xlab('Month') +
+  ylab('Number of Rides') + 
+  scale_fill_manual(values = c('#0097A7','#343e52'))
+```
+
+**Observations**: 
+
+* *Top months for casual riders*: July and August
+* *Top months for annual members*: August and September
+* For most months of the year, **annual members have more total rides than casual riders**
+  + Casual riders do have more rides than annual members in July
+* Annual members ride far more than casual riders in the winter/early spring
+  + One reason for this could be that these annual members still need to commute to work in the winter 
+
+<br>
+
+#### **Number of Rides by Day of Week**
+```{r, message = FALSE, echo = FALSE}
+all_rides_clean %>%
+  group_by(day_of_week, member_casual) %>%
+  summarize(number_of_rides = n(), avg_ride_duration = mean(ride_length_mins),
+            avg_ride_distance_m = mean(ride_distance_m)) %>%
+  ggplot(aes(x = day_of_week, y = number_of_rides, 
+             group = member_casual, fill = member_casual)) + 
+  geom_bar(position = 'dodge', stat = 'identity', width = 0.75) + 
+  scale_y_continuous(labels = comma, expand = c(0,0)) + 
+  theme_light() +
+  labs(title = 'Cyclistic - Total Rides: Jan 2021 - Dec 2021',
+       subtitle = 'By Day of Week and Member Type') +
+  theme(plot.title = element_text(face = 'bold'),
+        plot.subtitle = element_text(face = 'italic')) + 
+  xlab('Day of Week (Sun to Sat)') +
+  ylab('Number of Rides') + 
+  scale_fill_manual(values = c('#0097A7','#343e52'))
+```
+
+**Observations**
+
+* **Annual members ride more during the week** than casual riders
+  + Members may be riding out of necessity during the week
+* Most rides made by casual riders are on the weekend, where they outride annual members 
+  + **Especially on Saturday**, which is the highest point on the chart
+
+<br>
+
+#### **Number of Rides by Hour**
+```{r, message = FALSE, echo = FALSE}
+all_rides_clean %>%
+  group_by(hour_of_day, member_casual) %>%
+  summarize(number_of_rides = n(), avg_ride_duration = mean(ride_length_mins),
+            avg_ride_distance_m = mean(ride_distance_m)) %>%
+  ggplot(aes(x = hour_of_day, y = number_of_rides, 
+             group = member_casual, fill = member_casual)) + 
+  geom_bar(position = 'dodge', stat = 'identity', width = 0.75) + 
+  scale_y_continuous(labels = comma, expand = c(0,0)) + 
+  theme_light() +
+  labs(title = 'Cyclistic - Total Rides: Jan 2021 - Dec 2021',
+       subtitle = 'By Hour of Day and Member Type') +
+  theme(plot.title = element_text(face = 'bold'),
+        plot.subtitle = element_text(face = 'italic'),
+        legend.position = c(0.25,1),
+        legend.justification = c(1,1)) + 
+  xlab('Hour of Day (12:00am to 11:00pm)') +
+  ylab('Number of Rides') + 
+  scale_fill_manual(values = c('#0097A7','#343e52'))
+```
+
+**Observations**
+
+* *Biggest spikes in annual member rides*: between 7-8am and 5-6pm
+  + Interesting that the number of rides is lower in the morning hours
+  + If the majority of these annual member rides are revolved around work (most likely), then perhaps they are carpooling or taking public transit in the morning  
+* Distribution of casual riders by hour looks similar to the annual members one minus that morning spike
+
+<br>
+
+### Bike Types Visualizations
+
+#### **Avg. Ride Distance By Bike and Member Types (Across Months)**
+```{r, message = FALSE, echo = FALSE}
+all_rides_clean %>%
+  group_by(ride_month, rideable_type, member_casual) %>%
+  summarize(number_of_rides = n(), avg_ride_duration = mean(ride_length_mins),
+            avg_ride_distance_m = mean(ride_distance_m)) %>%
+  ggplot(aes(x = rideable_type, y = avg_ride_distance_m, 
+             group = member_casual, fill = member_casual)) +
+  geom_bar(position = 'dodge', stat = 'identity', width = 0.75) + 
+  facet_wrap(.~ride_month) + 
+  scale_y_continuous(labels = comma, expand = c(0,0)) +
+  theme_light() +
+  labs(title = 'Cyclistic - Avg. Ride Distance: Jan 2021 - Dec 2021',
+       subtitle = "By Member and Bike Type Across Months") +
+  theme(plot.title = element_text(face = 'bold'),
+        plot.subtitle = element_text(face = 'italic'),
+        axis.text.x = element_text(angle = 25,hjust = .80, vjust = .90)) +
+  xlab('Bike Types') +
+  ylab('Avg. Ride Distance (metres)') + 
+  scale_fill_manual(values = c('#0097A7','#343e52'))
+```
+
+**Observations**
+
+* In every month, **casual riders have a higher avg. ride distance on classic bikes**
+* The avg. ride distance on electric bikes is close between both groups
+  + In the spring/summer months, annual members are riding slightly further on electric bikes
+* **Docked bike riding is highest between Aug - Oct** for casual riders
+
+<br>
+
+#### **Avg. Ride Distance By Bike and Member Types (Days of Week)**
+
+```{r, message = FALSE, echo = FALSE}
+all_rides_clean %>%
+  group_by(day_of_week, rideable_type, member_casual) %>%
+  summarize(number_of_rides = n(), avg_ride_duration = mean(ride_length_mins),
+            avg_ride_distance_m = mean(ride_distance_m)) %>%
+  ggplot(aes(x = rideable_type, y = avg_ride_distance_m, 
+             group = member_casual, fill = member_casual)) +
+  geom_bar(position = 'dodge', stat = 'identity', width = 0.75) + 
+  facet_wrap(.~day_of_week) + 
+  scale_y_continuous(labels = comma, expand = c(0,0)) +
+  theme_light() +
+  labs(title = 'Cyclistic - Avg. Ride Distance: Jan 2021 - Dec 2021',
+       subtitle = "By Member and Bike Type Across Days of the Week (Sun - Sat") +
+  theme(plot.title = element_text(face = 'bold'),
+        plot.subtitle = element_text(face = 'italic'),
+        axis.text.x = element_text(angle = -30,hjust = .20, vjust = .90)) +
+  xlab('Bike Types') +
+  ylab('Avg. Ride Distance (metres)') + 
+  scale_fill_manual(values = c('#0097A7','#343e52'))
+```
+
+**Observations**
+
+* Avg. ride distance throughout the week for both groups is relatively stagnant 
+  + Don't see very big large differences in distance with electric bike riding
+
+<br>
+
+Now that we've plotted out some data and recorded some observations, it was time to move to the final phase, **Act**, to provide some recommendations/next steps to Cyclistic on addressing our business task. 
+
+## Act
+
+Our business task was: How do annual members and casual riders use Cyclistic bikes differently?
+
+#### Recommendations
+
+<br>
+
+1) **Weekend Rides Opportunity**
+
+* As established in the **Analyze** phase, casual riders prefer to ride mainly on weekends in the spring/summer months. 
+* Offering a limited-time discount (10-15%) on annual memberships throughout these months may entice casual riders. Given
+  + Casual riders are already aware of the Cyclistic program, so a promotion like this may help nudge them towards an annual membership.
+
+2) **Bike Type Promotion**
+
+* It's been established that casual riders tend to ride for longer distances on classic bikes. 
+* Ordering more classic bikes and building a marketing campaign around this ('Keeping it Classic') to draw more casual riders to choose classic bikes. 
+
+<br>
+
+#### Next Steps
+
+In terms of next steps, there are few ways that we can improve the data we already have. 
+
+My first next step would be to **collect anonymous demographic/behavioural data from Cyclistic's annual members**. The goal of this is to provide further context on why our annual members have their membership, and it can help to create different personas. We could leverage these personas in order to help convert casual riders to annual members. 
+
+My other next step is about **collecting additional data on casual riders**. In the dataset for this project, we don't have a way of knowing what type of pass a casual rider purchased: single-ride of full day. Having this information on-hand would be invaluable in better understanding Cyclistic's casual riders and how we can market to them.  
+
+# Conclusion
+
+We've reached the end of the project. Overall, this capstone project served as a fun and exciting way to learn and apply my data analyst skills. It allowed me the opportunity to take my time with and clean the data, troubleshooting issues along the way, and keeping me on my toes.
+
+I still have a very long way to go but after this project, I'm very eager to move forward and keep learning. 
+
+## Thank you! 
