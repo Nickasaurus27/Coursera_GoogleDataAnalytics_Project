@@ -54,31 +54,31 @@ With over **5 million rows** of data, processing was handled programmatically.
 ## 📊 Key Findings & Insights
 
 ### 1. Trip Duration & Distance
-* **Casual riders ride much longer**: The average ride duration of casual riders is **more than double** that of annual members [cite: 1, 4].
-* Annual members have shorter, highly consistent trip durations, indicating utilitarian usage (e.g., daily commuting) [cite: 1].
+* **Casual riders ride much longer**: The average ride duration of casual riders is **more than double** that of annual members.
+* Annual members have shorter, highly consistent trip durations, indicating utilitarian usage (e.g., daily commuting).
 
-### 2. Time-Based Behavior
-* **Weekday vs. Weekend**: Annual members ride more during the weekdays (Monday–Friday) [cite: 1, 4]. Casual riders dominate the weekends, peaking heavily on **Saturdays** [cite: 1].
-* **Hourly Spikes**: Members exhibit clear commuter spikes at **7:00 AM – 8:00 AM** and **5:00 PM – 6:00 PM** [cite: 1]. Casual rider activity increases steadily throughout the day, peaking in the afternoon without distinct rush-hour spikes [cite: 1].
-* **Seasonality**: Both groups peak in summer (July/August), but annual members continue riding at higher relative rates throughout the colder winter months [cite: 1].
+### 2. Time-Based Behaviour
+* **Weekday vs. Weekend**: Annual members ride more during the weekdays (Monday–Friday). Casual riders dominate the weekends, peaking heavily on **Saturdays**.
+* **Hourly Spikes**: Members exhibit clear commuter spikes at **7:00 AM – 8:00 AM** and **5:00 PM – 6:00 PM**. Casual rider activity increases steadily throughout the day, peaking in the afternoon without distinct rush-hour spikes.
+* **Seasonality**: Both groups peak in summer (July/August), but annual members continue riding at higher relative rates throughout the colder winter months.
 
 ### 3. Bike Preferences
-* **Classic bikes** are the most popular choice for both groups [cite: 1].
-* **Docked bikes** are almost *exclusively* used by casual riders [cite: 1].
+* **Classic bikes** are the most popular choice for both groups.
+* **Docked bikes** are almost *exclusively* used by casual riders.
 
 ---
 
 ## 💡 Strategic Recommendations
 
-1. **Seasonal Weekend Memberships**: Introduce a summer/weekend-specific pass or discounted seasonal annual memberships targeted at casual riders during peak months (June–August) [cite: 1].
-2. **"Keep it Classic" Promotion**: Since casual riders favor classic bikes for longer, leisure rides, market the comfort and health benefits of classic bikes for weekend exploration, emphasizing the financial savings of an annual membership for longer trips [cite: 1].
+1. **Seasonal Weekend Memberships**: Introduce a summer/weekend-specific pass or discounted seasonal annual memberships targeted at casual riders during peak months (June–August).
+2. **"Keep it Classic" Promotion**: Since casual riders favor classic bikes for longer, leisure rides, market the comfort and health benefits of classic bikes for weekend exploration, emphasizing the financial savings of an annual membership for longer trips.
 3. **Targeted Digital Campaigns**: Run digital ads at high-volume casual stations during weekend afternoon peak hours to capture casual users while they are actively riding.
 
 ---
 
 ## 📈 Code Artifacts
-* Detailed R analysis, cleaning scripts, and visualization code: **[`CapstoneProject.R`](CapstoneProject.R)** [cite: 3]
-* SQL exploratory analysis queries: **[`BikingSQLQueries.sql`](BikingSQLQueries.sql)** [cite: 4]
+* Detailed R analysis, cleaning scripts, and visualization code: **[`CapstoneProject.R`](CapstoneProject.R)**
+* SQL exploratory analysis queries: **[`BikingSQLQueries.sql`](BikingSQLQueries.sql)**
 
 ---
-*Created by **Nick Assuras** as part of the Google Data Analytics Professional Certificate program.* [cite: 1]
+*Created by **Nick Assuras** as part of the Google Data Analytics Professional Certificate program.*
